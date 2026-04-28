@@ -6,41 +6,38 @@ em vez de um `requirements.txt` que você precisa rodar manualmente, o `bob.py` 
 
 ## como funciona
 
-bob varre os `.py` do seu projeto usando `ast`, coleta os imports, filtra o que já é stdlib e instala só o que falta. Se o ambiente for gerenciado (Debian/Ubuntu), ele tenta `--break-system-packages` ou cria um venv automaticamente. 
+bob varre os `.py` do seu projeto usando `ast`, coleta os imports, filtra o que já é stdlib e instala só o que falta. Se o ambiente for gerenciado (Debian/Ubuntu), ele tenta `--break-system-packages` ou cria um venv automaticamente.
 
 pode ser perigoso? pode, mas as distros que eu uso não usam python no sistema, então por enquanto não me importo.
-
-```
-python3 bob.py
-```
-
-pronto.
 
 ## uso
 
 ```bash
-python3 bob.py          # instala deps e roda main.py
-python3 bob.py -c       # limpa a tela após instalar
-python3 bob.py -e       # gera executável via pyinstaller (dist/main)
-python3 bob.py -c -e    # os dois
+python3 bob.py              # instala deps e roda main.py
+python3 bob.py app.py       # roda um entry point específico
+python3 bob.py -r           # varre subpastas em busca de imports
+python3 bob.py -c           # limpa a tela após instalar
+python3 bob.py -e           # gera executável via pyinstaller (dist/main)
+python3 bob.py -r app.py -c -e  # tudo junto
 ```
 
 ## flags
 
 | flag | descrição |
 |------|-----------|
+| `[entry]` | arquivo entry point (default: `main.py`) |
+| `-r` | varre subpastas recursivamente em busca de imports |
 | `-c` | limpa a tela após a instalação das deps |
 | `-e` | compila o projeto em executável único com pyinstaller |
 
 tudo que bob faz fica registrado em `bob_log.txt`.
 
 ## estrutura esperada
-
 ```
 meu-projeto/
-├── bob.py      # o builder
-├── main.py     # entry point do seu projeto
-└── bob_log.txt # gerado automaticamente
+├── bob.py       # o builder
+├── main.py      # entry point do seu projeto
+└── bob_log.txt  # gerado automaticamente
 ```
 
 ## ordem de tentativa de instalação
@@ -51,4 +48,4 @@ meu-projeto/
 
 ## inspiração
 
-[tsoding/nob.h](https://github.com/tsoding/nob.h) é a mesma ideia, mas em C. 
+[tsoding/nob.h](https://github.com/tsoding/nob.h) a mesma ideia, mas em C.
