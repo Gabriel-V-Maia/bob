@@ -3,10 +3,13 @@ import sys, subprocess, ast, pathlib, argparse
 
 VENV = pathlib.Path(".bob-venv")
 
-def collect_deps():
+def collect_deps(recursive=False):
     imports = set()
-    for file in pathlib.Path(".").glob("*.py"):
+    pattern = "**/*.py" if recursive else "*.py"
+    for file in pathlib.Path(".").glob(pattern):
         if file.name == "bob.py":
+            continue
+        if ".bob-venv" in file.parts:
             continue
         try:
             tree = ast.parse(file.read_text())
@@ -50,8 +53,8 @@ def pip_install(packages):
     subprocess.check_call([str(venv_python), *sys.argv])
     sys.exit()
 
-def bootstrap():
-    deps = [d for d in collect_deps() if d not in sys.stdlib_module_names]
+def bootstrap(recursive=False):
+    deps = [d for d in collect_deps(recursive) if d not in sys.stdlib_module_names]
     missing = []
     for dep in deps:
         try: __import__(dep)
@@ -63,7 +66,7 @@ def bootstrap():
         subprocess.check_call([sys.executable, *sys.argv])
         sys.exit()
 
-def build_executable():
+def build_executable(entry):
     log("[bob] buildando executável com pyinstaller...")
     try: __import__("PyInstaller")
     except ImportError:
@@ -71,26 +74,28 @@ def build_executable():
         pip_install(["pyinstaller"])
 
     result = subprocess.run(
-        [sys.executable, "-m", "PyInstaller", "--onefile", "main.py"],
+        [sys.executable, "-m", "PyInstaller", "--onefile", entry],
         capture_output=True, text=True
     )
     log(result.stdout)
     if result.returncode != 0:
         log("[bob] erro:\n" + result.stderr)
     else:
-        log("[bob] executável gerado em dist/main")
+        log(f"[bob] executável gerado em dist/{pathlib.Path(entry).stem}")
 
 parser = argparse.ArgumentParser()
+parser.add_argument("entry", nargs="?", default="main.py", help="arquivo entry point (default: main.py)")
 parser.add_argument("-c", "--clear", action="store_true", help="limpa a tela após instalar")
 parser.add_argument("-e", "--executable", action="store_true", help="gera executável com pyinstaller")
+parser.add_argument("-r", "--recursive", action="store_true", help="varre subpastas em busca de imports")
 args = parser.parse_args()
 
-bootstrap()
+bootstrap(args.recursive)
 
 if args.clear:
-    subprocess.call("clear")
+    subprocess.call("clear", shell=True)
 
 if args.executable:
-    build_executable()
+    build_executable(args.entry)
 else:
-    subprocess.check_call([sys.executable, "main.py"])
+    subprocess.check_call([sys.executable, args.entry])
